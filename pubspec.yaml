@@ -1,0 +1,20 @@
+name: fabric_gateway
+description: Dart implementation of Hyperledger Fabric Gateway (initial scaffold).
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  protobuf: ^5.1.0
+  grpc: ^5.0.0
+  fixnum: ^1.0.0
+  crypto: ^3.0.0
+  asn1lib: ^1.5.0
+  pointycastle: ^3.7.0
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^2.0.0
+
+# Note: Generated proto files will be placed under `lib/src/protos/`.

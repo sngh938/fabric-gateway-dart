@@ -1,0 +1,10 @@
+.dart_tool/
+build/
+.packages
+pubspec.lock
+lib/src/protos/
+.idea/
+.vscode/
+*.iml
+/.github/workflows/generated-protos-commit%
+coverage/

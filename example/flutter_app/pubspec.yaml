@@ -1,0 +1,16 @@
+name: fabric_gateway_example
+description: Minimal Flutter example for fabric_gateway (skeleton).
+publish_to: none
+version: 0.1.0
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fabric_gateway:
+    path: ../../
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,16 @@
+include: package:lints/recommended.yaml
+
+linter:
+  rules:
+    - avoid_print
+    - always_declare_return_types
+    - always_specify_types
+    - prefer_final_locals
+
+analyzer:
+  exclude:
+    - "lib/src/protos/**"
+    - "lib/src/google_well_known_types/**"
+    - "lib/src/**.pb.dart"
+    - "lib/src/**.pbgrpc.dart"
+    - "lib/src/**.pbjson.dart"
