@@ -42,7 +42,3 @@ final result = await gateway.evaluateTransaction(
   args: ['asset1'],
 );
 ```
-
-## Development
-
-This library was developed as part of the itshinni-go project and provides full compatibility with Hyperledger Fabric networks.
