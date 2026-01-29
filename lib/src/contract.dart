@@ -3,11 +3,67 @@ import 'dart:typed_data';
 import 'protos/gateway/gateway.pb.dart' as $gw;
 import 'protos/peer/proposal.pb.dart' as $peer;
 import 'protos/common/common.pb.dart' as $common;
+import 'protos/peer/transaction.pb.dart' as $tx;
+import 'protos/peer/proposal_response.pb.dart' as $pr;
 import 'proposal_builder.dart';
 
 import 'gateway_client.dart';
 import 'types.dart';
 // proposal.dart contents inlined here to avoid circular imports
+
+/// Extracts the chaincode result from a prepared transaction envelope.
+/// The prepared transaction is returned by the Endorse gateway call and contains
+/// the endorsed proposal response with the chaincode execution result.
+Uint8List _extractResultFromPreparedTransaction($common.Envelope envelope) {
+  try {
+    // 1. Decode envelope.payload to get Payload
+    final $common.Payload payload =
+        $common.Payload.fromBuffer(envelope.payload);
+
+    // 2. Decode payload.data to get Transaction
+    final $tx.Transaction transaction = $tx.Transaction.fromBuffer(payload.data);
+
+    // 3. Get the first TransactionAction
+    if (transaction.actions.isEmpty) {
+      return Uint8List(0);
+    }
+    final $tx.TransactionAction action = transaction.actions.first;
+
+    // 4. Decode action.payload to get ChaincodeActionPayload
+    final $tx.ChaincodeActionPayload ccActionPayload =
+        $tx.ChaincodeActionPayload.fromBuffer(action.payload);
+
+    // 5. Get the ChaincodeEndorsedAction
+    if (!ccActionPayload.hasAction()) {
+      return Uint8List(0);
+    }
+    final $tx.ChaincodeEndorsedAction endorsedAction = ccActionPayload.action;
+
+    // 6. Decode proposalResponsePayload to get ProposalResponsePayload
+    final $pr.ProposalResponsePayload prpPayload =
+        $pr.ProposalResponsePayload.fromBuffer(
+            endorsedAction.proposalResponsePayload);
+
+    // 7. Decode extension to get ChaincodeAction
+    if (!prpPayload.hasExtension_2()) {
+      return Uint8List(0);
+    }
+    final $peer.ChaincodeAction ccAction =
+        $peer.ChaincodeAction.fromBuffer(prpPayload.extension_2);
+
+    // 8. Get the Response which contains the chaincode result
+    if (!ccAction.hasResponse()) {
+      return Uint8List(0);
+    }
+    final $pr.Response response = ccAction.response;
+
+    // 9. Return the payload (chaincode result bytes)
+    return Uint8List.fromList(response.payload);
+  } catch (e) {
+    // If any decoding fails, return empty bytes
+    return Uint8List(0);
+  }
+}
 
 /// Represents a smart contract on a channel.
 class Contract {
@@ -92,13 +148,17 @@ class Contract {
     final List<int> envelopeSignature = await _signer!(prepared.payload);
     prepared.signature = envelopeSignature;
 
+    // Extract the chaincode result before submitting
+    final Uint8List result = _extractResultFromPreparedTransaction(prepared);
+
     final $gw.SubmitRequest submitReq = $gw.SubmitRequest(
         transactionId: txId,
         channelId: _channel,
         preparedTransaction: prepared);
     await _client.submit(submitReq);
 
-    return Uint8List(0);
+    // Return the chaincode result
+    return result;
   }
 
   /// Create a proposal builder for advanced flows
@@ -183,11 +243,16 @@ class Transaction {
       envelope.signature = envelopeSignature;
     }
 
+    // Extract the chaincode result before submitting
+    final Uint8List result = _extractResultFromPreparedTransaction(envelope);
+
     final $gw.SubmitRequest req = $gw.SubmitRequest(
         transactionId: transactionId,
         channelId: _channel,
         preparedTransaction: envelope);
     await _client.submit(req);
-    return Uint8List(0);
+
+    // Return the chaincode result
+    return result;
   }
 }
