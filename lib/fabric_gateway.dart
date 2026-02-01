@@ -2,6 +2,7 @@
 library fabric_gateway;
 
 export 'src/gateway.dart';
+export 'src/gateway_exception.dart';
 export 'src/network.dart';
 export 'src/contract.dart';
 export 'src/transaction.dart';

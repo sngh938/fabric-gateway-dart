@@ -10,9 +10,12 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:grpc/grpc.dart' as $grpc;
+import 'package:protobuf/protobuf.dart' show GeneratedMessage;
 
+import 'google_well_known_types/protobuf/any.pb.dart' as $any;
 import 'protos/gateway/gateway.pb.dart' as $gw;
 import 'protos/gateway/gateway.pbgrpc.dart' as $gwgrpc;
+import 'gateway_exception.dart';
 
 /// GatewayClient provides low-level RPC helper methods used by the SDK.
 ///
@@ -27,33 +30,56 @@ class GatewayClient {
   /// Evaluate a request using the gateway Evaluate RPC.
   Future<$gw.EvaluateResponse> evaluate($gw.EvaluateRequest request,
       {$grpc.CallOptions? options}) async {
-    return await _stub.evaluate(request, options: options);
+    try {
+      return await _stub.evaluate(request, options: options);
+    } on $grpc.GrpcError catch (e) {
+      throw _decodeGrpcError(e);
+    }
   }
 
   /// Endorse a prepared transaction (Endorse RPC).
   Future<$gw.EndorseResponse> endorse($gw.EndorseRequest request,
       {$grpc.CallOptions? options}) async {
-    return await _stub.endorse(request, options: options);
+    try {
+      return await _stub.endorse(request, options: options);
+    } on $grpc.GrpcError catch (e) {
+      throw _decodeGrpcError(e);
+    }
   }
 
   /// Submit a signed transaction to ordering service (Submit RPC).
   Future<$gw.SubmitResponse> submit($gw.SubmitRequest request,
       {$grpc.CallOptions? options}) async {
-    return await _stub.submit(request, options: options);
+    try {
+      return await _stub.submit(request, options: options);
+    } on $grpc.GrpcError catch (e) {
+      throw _decodeGrpcError(e);
+    }
   }
 
   /// Query commit status for a transaction (CommitStatus RPC).
   Future<$gw.CommitStatusResponse> commitStatus(
       $gw.SignedCommitStatusRequest request,
       {$grpc.CallOptions? options}) async {
-    return await _stub.commitStatus(request, options: options);
+    try {
+      return await _stub.commitStatus(request, options: options);
+    } on $grpc.GrpcError catch (e) {
+      throw _decodeGrpcError(e);
+    }
   }
 
   /// Stream chaincode events using server-streaming RPC.
   Stream<$gw.ChaincodeEventsResponse> chaincodeEvents(
       $gw.SignedChaincodeEventsRequest request,
       {$grpc.CallOptions? options}) {
-    return _stub.chaincodeEvents(request, options: options);
+    return _stub
+        .chaincodeEvents(request, options: options)
+        .handleError((Object error) {
+      if (error is $grpc.GrpcError) {
+        throw _decodeGrpcError(error);
+      }
+      throw error;
+    });
   }
 
   /// Stream block/filtered/block+private data events via Deliver (if implemented).
@@ -68,5 +94,32 @@ class GatewayClient {
   /// Close underlying channels / stubs.
   Future<void> close() async {
     await _channel.shutdown();
+  }
+
+  /// Decodes a GrpcError into a GatewayException by extracting any
+  /// gateway.ErrorDetail messages from the raw Any payloads in details.
+  static GatewayException _decodeGrpcError($grpc.GrpcError e) {
+    final List<$gw.ErrorDetail> errorDetails = <$gw.ErrorDetail>[];
+    if (e.details != null) {
+      for (final GeneratedMessage detail in e.details!) {
+        try {
+          // The grpc package leaves unrecognized Any types as-is. Serialize
+          // back to bytes so we can parse with our own Any and extract value.
+          final $any.Any any = $any.Any.fromBuffer(detail.writeToBuffer());
+          if (any.typeUrl.endsWith('gateway.ErrorDetail')) {
+            errorDetails.add($gw.ErrorDetail.fromBuffer(any.value));
+          }
+        } catch (_) {
+          // TODO: Skip details that can't be decoded as ErrorDetail for now, but
+          // consider logging or surface somehow in the future.
+        }
+      }
+    }
+    return GatewayException(
+      code: e.code,
+      codeName: e.codeName,
+      message: e.message,
+      details: errorDetails,
+    );
   }
 }
