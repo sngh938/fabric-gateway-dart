@@ -6,8 +6,8 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  protobuf: ^5.1.0
-  grpc: ^5.0.0
+  protobuf: ^6.0.0
+  grpc: ^5.1.0
   fixnum: ^1.0.0
   crypto: ^3.0.0
   asn1lib: ^1.5.0

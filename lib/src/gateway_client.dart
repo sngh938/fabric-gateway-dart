@@ -12,7 +12,7 @@ import 'dart:typed_data';
 import 'package:grpc/grpc.dart' as $grpc;
 import 'package:protobuf/protobuf.dart' show GeneratedMessage;
 
-import 'google_well_known_types/protobuf/any.pb.dart' as $any;
+import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart' as $any;
 import 'protos/gateway/gateway.pb.dart' as $gw;
 import 'protos/gateway/gateway.pbgrpc.dart' as $gwgrpc;
 import 'gateway_exception.dart';

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'google_well_known_types/protobuf/timestamp.pb.dart'
+import 'package:protobuf/well_known_types/google/protobuf/timestamp.pb.dart'
     as $ts;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 
